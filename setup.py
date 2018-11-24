@@ -5,7 +5,7 @@ setuptools.setup(
     version="0.1.0",
     author="?",
     packages=[
-        "union_prototype"
+        "advdb_prototype"
     ],
     include_package_date=False,
     url="https://github.com/paulbry/AdvDB-Prototype",
@@ -17,7 +17,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-            'union-prototype = union_prototype.__main__:main'
+            'union-prototype = union_protoype.__main__:main'
         ]
     }
 )
