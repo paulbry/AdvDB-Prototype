@@ -31,7 +31,7 @@ def manage_args(args):
 
     api.add_resource(api_pack.Parallel, '/parallel',
                      '/parallel/<string:obj_id>',
-                     '/parallel/<string:obj_id>/<string:system>')
+                     '/parallel/<string:obj_id>/<string:test>')
 
     app.run(debug=args.debug)
 
@@ -39,6 +39,7 @@ def manage_args(args):
 def main():
     try:
         args = parser.parse_args()
+        # TODO: better method of dealing with empty namespace
         manage_args(args)
     except argparse.ArgumentError as e:
         cprint(e, 'red')
