@@ -39,7 +39,6 @@ def manage_args(args):
 def main():
     try:
         args = parser.parse_args()
-        # TODO: better method of dealing with empty namespace
         manage_args(args)
     except argparse.ArgumentError as e:
         cprint(e, 'red')
