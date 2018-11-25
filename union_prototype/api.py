@@ -1,4 +1,7 @@
+# 3rd party
 from flask_restful import Resource
+# project
+from union_prototype import db_interface
 
 
 class Parallel(Resource):
