@@ -31,7 +31,7 @@ def manage_args(args):
 
     api.add_resource(api_pack.Parallel, '/parallel',
                      '/parallel/<string:obj_id>',
-                     '/parallel/<string:obj_id>/<string:test>')
+                     '/parallel/<string:obj_id>/<string:system>')
 
     app.run(debug=args.debug)
 
