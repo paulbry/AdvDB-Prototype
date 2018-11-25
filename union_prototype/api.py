@@ -1,13 +1,15 @@
-from flask import Flask
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restful import Resource
 
 
 class Parallel(Resource):
     def __init__(self):
         pass
 
-    def get(self):
-        pass
+    def get(self, obj_id=None, test=None):
+        if test is None:
+            return {'hello': obj_id}
+        else:
+            return {'test': test}
 
     def put(self):
         pass
