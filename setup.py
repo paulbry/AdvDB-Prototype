@@ -13,7 +13,9 @@ setuptools.setup(
     install_requires=[
         'termcolor',
         'flask',
-        'flask_restful'
+        'flask_restful',
+        'google-cloud-storage',
+        'pymongo'
     ],
     entry_points={
         'console_scripts': [
