@@ -36,7 +36,6 @@ parser.add_argument("-p", "--db-port",
                     help="Port for database service (default = 27017)")
 
 
-
 # noinspection PyTypeChecker
 def manage_args(args):
     app = Flask(__name__)
