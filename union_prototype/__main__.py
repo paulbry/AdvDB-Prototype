@@ -17,11 +17,24 @@ parser = argparse.ArgumentParser(description="Advance Database - System "
 #
 # debug:    Enable flask debug mode
 #           http://flask.pocoo.org/docs/1.0/quickstart/#debug-mode
+# db-url:   Url for database (default = localhost)
+# db-port:  Port for database (default = 27017)
 ###############################################################################
 parser.add_argument("-d", "--debug",
                     dest='debug', action='store_true',
                     default=False,
                     help="Enable Flask's debug mode (default = False)")
+
+parser.add_argument("-u", "--db-url",
+                    dest='db_url', nargs=1,
+                    default='localhost',
+                    help="URL for database service (default = localhost)")
+
+parser.add_argument("-p", "--db-port",
+                    dest='db_port', nargs=1,
+                    default=27017,
+                    help="Port for database service (default = 27017)")
+
 
 
 # noinspection PyTypeChecker
@@ -29,9 +42,15 @@ def manage_args(args):
     app = Flask(__name__)
     api = Api(app)
 
+    # Parallel (e.g. Lustre) resources
     api.add_resource(api_pack.Parallel, '/parallel',
                      '/parallel/<string:obj_id>',
-                     '/parallel/<string:obj_id>/<string:system>')
+                     '/parallel/<string:obj_id>/<string:file_sys>')
+
+    # Cloud (e.g. Google Cloud Storage, Amazon S3) resources
+    api.add_resource(api_pack.Cloud, '/cloud',
+                     '/cloud/<string:obj_id>',
+                     '/cloud/<string:obj_id>/<string:file_sys>')
 
     app.run(debug=args.debug)
 
