@@ -20,6 +20,7 @@ class DatabaseCtl(object):
     def __init__(self):
         # hardcoded paths (need to alter)
         self.db_loc = os.path.dirname(os.path.realpath(__file__)) + "\.protodb"
+        self.table = "objectdata"
 
     def create_object_db(self):
         """
@@ -81,7 +82,8 @@ class DatabaseCtl(object):
         :return: List of objectID
         """
         id_list = []
-        cmd = "SELECT objectID FROM objectdata WHERE parentID IS NULL"
+        cmd = "SELECT objectID FROM {0} WHERE parentID IS NULL".format(
+            self.table)
         if cloud:
             cmd += " AND cloudLoc IS NOT NULL"
 
@@ -95,6 +97,29 @@ class DatabaseCtl(object):
         self.__close_db(mydb, False)
 
         return id_list
+
+    def safe_query_value(self, index, value, result):
+        """
+        SELECT <result> FROM DB WHERE <index>=<value>
+        :param index:
+        :param value:
+        :param result:
+        :return: Tuple Success boolean,
+        """
+        cmd = "SELECT {0} FROM {1} WHERE {2}='{3}'".format(
+            result,  self.table, index, str(value)
+        )
+
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
+
+        if self.__execute_query(cursor, cmd):
+            val = True, cursor.fetchone()[0]
+        else:
+            val = False, None
+
+        self.__close_db(mydb, False)
+        return val
 
     # PRIVATE/SUPPORTING
     def __connect_db(self):
