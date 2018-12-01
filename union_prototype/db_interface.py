@@ -2,7 +2,6 @@
 import os
 import sqlite3
 # 3rd party
-import mysql
 from termcolor import cprint
 
 ###############################################################################
@@ -11,6 +10,9 @@ from termcolor import cprint
 # industry acceptable tool. Long term this will need to change; however,
 # for a temporary measure this is acceptable.
 # When better solution identified we will restructure the module
+# Current checklist (12/1/2018)
+# TODO: decide database type
+# TODO: change error handling after finalizing DB type
 ###############################################################################
 
 
@@ -25,13 +27,8 @@ class DatabaseCtl(object):
         in order to support prototype requirements
         :return: True is successful, False is not
         """
-        try:
-            db = sqlite3.connect(self.db_loc)
-            cursor = db.cursor()
-        except sqlite3.Error as e:
-            cprint("Unexpected error during database creation/connection\n{}".format(
-                e), 'red')
-            return False
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
 
         cmd = "CREATE TABLE IF NOT EXISTS objectdata "\
               "(id INTEGER PRIMARY KEY, " \
@@ -43,33 +40,91 @@ class DatabaseCtl(object):
               "time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)"
 
         if self.__execute_query(cursor, cmd):
-            db.commit()
-            db.close()
+            self.__close_db(mydb, True)
             return True
         else:
-            db.close()
+            self.__close_db(mydb, False)
             return False
 
     def api_get_object(self, object_id):
-        pass
+        """
+        :param object_id: Valid object ID
+        :return: Dictionary with all details from parent and all possible
+        child/sub object
+        """
+        cmd_p = "SELECT * FROM objectdata WHERE objectID = " \
+                "'{}'".format(object_id)
+        cmd_c = "SELECT * FROM objectdata WHERE parentID = " \
+                "'{}'".format(object_id)
+        obj_dict = {}
+
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
+
+        if self.__execute_query(cursor, cmd_p):
+            obj_dict.update({'parent': self.__dict_format(cursor.fetchone())})
+
+        if self.__execute_query(cursor, cmd_c):
+            num = 0
+            for line in cursor.fetchall():
+                obj_dict.update(
+                    {'child{}'.format(num): self.__dict_format(line)})
+                num += 1
+
+        self.__close_db(mydb, False)
+        return obj_dict
 
     def api_get_all_id(self, cloud=False):
+        """
+        Get list of all possible top level (parent) objects
+        :param cloud: Boolean, if searching for objects stored in Cloud system
+        :return: List of objectID
+        """
+        id_list = []
         cmd = "SELECT objectID FROM objectdata WHERE parentID IS NULL"
         if cloud:
             cmd += " AND cloudLoc IS NOT NULL"
 
-        db = sqlite3.connect(self.db_loc)
-        cursor = db.cursor()
-        id_list = []
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
 
         if self.__execute_query(cursor, cmd):
             for line in cursor.fetchall():
                 id_list.append(line[0])
 
-        db.close()
+        self.__close_db(mydb, False)
+
         return id_list
 
     # PRIVATE/SUPPORTING
+    def __connect_db(self):
+        """
+        Open connection to database, exit(1) if error encountered
+        :return: connection to database (sqlite3.connect() object)
+        """
+        try:
+            return sqlite3.connect(self.db_loc)
+        except sqlite3.Error as e:
+            cprint("Unexpected error during database connection\n{}".format(
+                e), 'red')
+            exit(1)
+
+    @staticmethod
+    def __close_db(mydb, commit):
+        """
+        Close connection to database, exit(1) if error encountered
+        :param mydb: connection to database (sqlite3.connect() object)
+        :param commit: Boolean, commit all changes (True)
+        """
+        try:
+            if commit:
+                mydb.commit()
+            mydb.close()
+        except sqlite3.Error as e:
+            cprint("Unexpected error during database close\n{}".format(
+                e), 'red')
+            exit(1)
+
     @staticmethod
     def __execute_query(cursor, cmd):
         """
@@ -88,19 +143,9 @@ class DatabaseCtl(object):
             cprint("Operational error during {}\n{}".format(cmd, e), 'red')
             return False
 
-    def insert_test_data(self):
-        db = sqlite3.connect(self.db_loc)
-        cursor = db.cursor()
+    @staticmethod
+    def __dict_format(line):
+        tmp = {'objectID': line[1], 'parallelLoc': line[2], 'cloudLoc': line[3], 'verificationHash': line[4],
+               'parentID': line[5], 'time': line[6]}
+        return tmp
 
-        self.__execute_query(cursor, "INSERT INTO objectdata (objectID, parallelLoc) VALUES ('1A', 'test')")
-        self.__execute_query(cursor, "INSERT INTO objectdata (objectID, parallelLoc) VALUES ('1B', 'test')")
-        self.__execute_query(cursor, "INSERT INTO objectdata (objectID, parallelLoc) VALUES ('1C', 'test')")
-
-        db.commit()
-        db.close()
-
-
-dat = DatabaseCtl()
-dat.create_object_db()
-dat.insert_test_data()
-dat.api_get_all_id()
