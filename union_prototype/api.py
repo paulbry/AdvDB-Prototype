@@ -8,6 +8,9 @@ class Parallel(Resource):
     def __init__(self):
         self.par_db = db_interface.DatabaseCtl()
 
+    ###########################################################################
+    # REST API
+    ###########################################################################
     def get(self, obj_id=None):
         # GET /parallel
         if obj_id is None:
@@ -19,10 +22,19 @@ class Parallel(Resource):
     def put(self):
         pass
 
-    def delete(self):
-        pass
+    def delete(self, obj_id=None):
+        # DELETE /parallel
+        if obj_id is None:
+            return {'ERROR': 'No objectID supplied'}
+        # DELETE /parallel/obj_id/
+        else:
+            return self.par_db.safe_query_value('objectID', obj_id, 'parallelLoc')
 
     def post(self):
+        pass
+
+    # PRIVATE/SUPPORTING
+    def __delete(self, obj_id, location):
         pass
 
 
@@ -30,11 +42,14 @@ class Cloud(Resource):
     def __init__(self):
         self.cld_db = db_interface.DatabaseCtl()
 
+    ###########################################################################
+    # REST API
+    ###########################################################################
     def get(self, obj_id=None):
-        # GET /parallel
+        # GET /cloud
         if obj_id is None:
             return {'valid_parent_ids': self.cld_db.api_get_all_id(True)}
-        # GET /parallel/obj_id/
+        # GET /cloud/obj_id/
         else:
             return self.par_db.api_get_object(str(obj_id))
 
@@ -45,4 +60,8 @@ class Cloud(Resource):
         pass
 
     def post(self):
+        pass
+
+    # PRIVATE/SUPPORTING
+    def __delete(self, obj_id, cloud):
         pass
