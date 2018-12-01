@@ -11,10 +11,10 @@ class Parallel(Resource):
     def get(self, obj_id=None):
         # GET /parallel
         if obj_id is None:
-            return {'valid_parent_ids': self.cld_db.api_get_all_id()}
+            return {'valid_parent_ids': self.par_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
-            return self.par_db.api_get_object(obj_id)
+            return self.par_db.api_get_object(str(obj_id))
 
     def put(self):
         pass
@@ -36,7 +36,7 @@ class Cloud(Resource):
             return {'valid_parent_ids': self.cld_db.api_get_all_id(True)}
         # GET /parallel/obj_id/
         else:
-            return self.par_db.api_get_object(obj_id)
+            return self.par_db.api_get_object(str(obj_id))
 
     def put(self):
         pass
