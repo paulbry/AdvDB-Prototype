@@ -6,19 +6,15 @@ from union_prototype import db_interface
 
 class Parallel(Resource):
     def __init__(self):
-        pass
+        self.par_db = db_interface.DatabaseCtl()
 
-    def get(self, obj_id=None, system=None):
+    def get(self, obj_id=None):
         # GET /parallel
         if obj_id is None:
-            return {'hello': 'world'}
-
+            return {'valid_parent_ids': self.cld_db.api_get_all_id()}
         # GET /parallel/obj_id/
-        if system is None:
-            return {'hello': obj_id}
-        # GET /parallel/obj_id/system
         else:
-            return {'test': system}
+            return self.par_db.api_get_object(obj_id)
 
     def put(self):
         pass
@@ -32,10 +28,15 @@ class Parallel(Resource):
 
 class Cloud(Resource):
     def __init__(self):
-        pass
+        self.cld_db = db_interface.DatabaseCtl()
 
-    def get(self):
-        pass
+    def get(self, obj_id=None):
+        # GET /parallel
+        if obj_id is None:
+            return {'valid_parent_ids': self.cld_db.api_get_all_id(True)}
+        # GET /parallel/obj_id/
+        else:
+            return self.par_db.api_get_object(obj_id)
 
     def put(self):
         pass
