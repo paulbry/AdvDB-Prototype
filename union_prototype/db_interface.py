@@ -63,17 +63,35 @@ class DatabaseCtl(object):
         cursor = mydb.cursor()
 
         if self.__execute_query(cursor, cmd_p):
-            obj_dict.update({'parent': self.__dict_format(cursor.fetchone())})
+            obj_dict.update({'main': self.__dict_format(cursor.fetchone())})
 
         if self.__execute_query(cursor, cmd_c):
             num = 0
             for line in cursor.fetchall():
                 obj_dict.update(
-                    {'child{}'.format(num): self.__dict_format(line)})
+                    {'sub{}'.format(num): self.__dict_format(line)})
                 num += 1
 
         self.__close_db(mydb, False)
         return obj_dict
+
+    def api_insert_event(self, object_id, parallel_loc, cloud_loc,
+                         verification_hash, parent_id):
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
+
+        try:
+            cursor.execute("INSERT INTO  objectdata (objectID, parallelLoc, cloudLoc, "
+                           "verificationHash, parentID) VALUES(?, ?, ?, ?, ?)",
+                           (object_id, parallel_loc, cloud_loc, verification_hash, parent_id))
+            self.__close_db(mydb, True)
+            return True
+        except sqlite3.Error as e:
+            cprint("Error during: insert_launch_event\n" + repr(e), 'red')
+            return False
+        except sqlite3.OperationalError as e:
+            cprint("Error during: insert_launch_event\n" + repr(e), 'red')
+            return False
 
     def api_get_all_id(self, cloud=False):
         """
@@ -120,6 +138,26 @@ class DatabaseCtl(object):
 
         self.__close_db(mydb, False)
         return val
+
+    def safe_delete_entry(self, index, value):
+        """
+        DELETE FROM DB WHERE <index>=<value>
+        :param index:
+        :param value:
+        :return: Boolean, True is success
+        """
+        cmd = "DELETE FROM {0} WHERE {1}='{2}'".format(
+            self.table, index, value)
+
+        mydb = self.__connect_db()
+        cursor = mydb.cursor()
+
+        if self.__execute_query(cursor, cmd):
+            self.__close_db(mydb, True)
+            return True
+
+        self.__close_db(mydb, False)
+        return False
 
     # PRIVATE/SUPPORTING
     def __connect_db(self):
@@ -173,4 +211,3 @@ class DatabaseCtl(object):
         tmp = {'objectID': line[1], 'parallelLoc': line[2], 'cloudLoc': line[3], 'verificationHash': line[4],
                'parentID': line[5], 'time': line[6]}
         return tmp
-

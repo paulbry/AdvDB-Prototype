@@ -51,6 +51,10 @@ def manage_args(args):
                      '/cloud/<string:obj_id>',
                      '/cloud/<string:obj_id>/<string:file_sys>')
 
+    # MetaData (PUT/DELETE entries in DB only!) resource
+    api.add_resource(api_pack.MetaData, '/meta',
+                     '/meta/<string:obj_id>')
+
     app.run(debug=args.debug)
 
 
