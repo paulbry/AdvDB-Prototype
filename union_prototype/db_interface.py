@@ -38,7 +38,8 @@ class DatabaseCtl(object):
               "cloudLoc TEXT, " \
               "verificationHash TEXT, " \
               "parentID TEXT, " \
-              "time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)"
+              "time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, " \
+              "cloudVendor TEXT)"
 
         if self.__execute_query(cursor, cmd):
             self.__close_db(mydb, True)
@@ -76,14 +77,15 @@ class DatabaseCtl(object):
         return obj_dict
 
     def api_insert_event(self, object_id, parallel_loc, cloud_loc,
-                         verification_hash, parent_id):
+                         verification_hash, parent_id, cloud_vendor):
         mydb = self.__connect_db()
         cursor = mydb.cursor()
 
         try:
             cursor.execute("INSERT INTO  objectdata (objectID, parallelLoc, cloudLoc, "
-                           "verificationHash, parentID) VALUES(?, ?, ?, ?, ?)",
-                           (object_id, parallel_loc, cloud_loc, verification_hash, parent_id))
+                           "verificationHash, parentID, cloudVendor) VALUES(?, ?, ?, ?, ?, ?)",
+                           (object_id, parallel_loc, cloud_loc, verification_hash, parent_id,
+                            cloud_vendor))
             self.__close_db(mydb, True)
             return True
         except sqlite3.Error as e:
@@ -209,5 +211,5 @@ class DatabaseCtl(object):
     @staticmethod
     def __dict_format(line):
         tmp = {'objectID': line[1], 'parallelLoc': line[2], 'cloudLoc': line[3], 'verificationHash': line[4],
-               'parentID': line[5], 'time': line[6]}
+               'parentID': line[5], 'time': line[6], 'cloudVendor': line[7]}
         return tmp

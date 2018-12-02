@@ -53,11 +53,13 @@ class MetaData(Resource):
         if parallel_loc is None:
             return False, 'No parallelLoc found'
         cloud_loc = single_obj.get('cloudLoc')
+        cloud_vendor = single_obj.get('cloudVendor')
         verification_hash = single_obj.get('verificationHash')
         parent_id = single_obj.get('parentID')
 
         if self.meta_db.api_insert_event(object_id, parallel_loc, cloud_loc,
-                                         verification_hash, parent_id):
+                                         verification_hash, parent_id,
+                                         cloud_vendor):
             return True, 'Successfully POST object {0}'.format(object_id)
 
         return False, 'Unexpected error during INSERT'
