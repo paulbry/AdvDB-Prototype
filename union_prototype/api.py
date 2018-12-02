@@ -112,21 +112,11 @@ class Cloud(Resource):
         else:
             vend = cloud_vendor
             if cloud_vendor is None:
-                b,v = self.cld_db.safe_query_value('objectID',
-                                                   obj_id, 'cloudVendor')
-                if b:  # successfully checked
-                    vend = v[0]
-                else:
-                    return {'error': 'no cloud vendor can be established'}
+                return {'error': 'no cloud vendor can be established'}
 
             cloc = cloud_loc
             if cloud_loc is None:
-                b, v = self.cld_db.safe_query_value('objectID',
-                                                    obj_id, 'cloudLoc')
-                if b:  # successfully checked
-                    cloc = v[0]
-                else:
-                    return {'error': 'no cloud location can be established'}
+                return {'error': 'no cloud location can be established'}
 
             self.__execute_cloud_put()
 
@@ -134,5 +124,6 @@ class Cloud(Resource):
         return {'PUT details': {'cloudVendor': vend,
                                 'cloudLoc': cloc}}
 
-    def __execute_cloud_put(self):
+    def __execute_cloud_put(self, og_obj_id, tar_cloud_vendor, tar_cloud_loc):
         pass
+
