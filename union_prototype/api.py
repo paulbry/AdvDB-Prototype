@@ -105,5 +105,34 @@ class Cloud(Resource):
         else:
             return self.par_db.api_get_object(str(obj_id))
 
-    def put(self):
+    def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None):
+        # PUT /cloud
+        if obj_id is None:
+            return {'unsupported': 'A valid objectID must be provided'}
+        else:
+            vend = cloud_vendor
+            if cloud_vendor is None:
+                b,v = self.cld_db.safe_query_value('objectID',
+                                                   obj_id, 'cloudVendor')
+                if b:  # successfully checked
+                    vend = v[0]
+                else:
+                    return {'error': 'no cloud vendor can be established'}
+
+            cloc = cloud_loc
+            if cloud_loc is None:
+                b, v = self.cld_db.safe_query_value('objectID',
+                                                    obj_id, 'cloudLoc')
+                if b:  # successfully checked
+                    cloc = v[0]
+                else:
+                    return {'error': 'no cloud location can be established'}
+
+            self.__execute_cloud_put()
+
+        # TODO: clean up and supply useful information
+        return {'PUT details': {'cloudVendor': vend,
+                                'cloudLoc': cloc}}
+
+    def __execute_cloud_put(self):
         pass
