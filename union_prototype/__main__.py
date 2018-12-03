@@ -1,6 +1,7 @@
 # system
 import argparse
-import os.path
+import os
+import sys
 # 3rd party
 from flask import Flask
 from flask_restful import Api
@@ -63,6 +64,14 @@ def manage_args(args):
                      '/meta/<string:obj_id>')
 
     app.run(debug=args.debug)
+
+
+def launch_verification():
+    """Verify some required launch parameters that could lead to failures"""
+    if 'GOOGLE_APPLICATION_CREDENTIALS' not in os.environ:
+        cprint('Unable to identify GOOGLE_APPLICATION_CREDENTIALS variable', 'red')
+        sys.exit(os.EX_UNAVAILABLE)
+    return True
 
 
 def main():
