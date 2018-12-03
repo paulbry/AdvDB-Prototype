@@ -129,5 +129,10 @@ class Cloud(Resource):
         return {'PUT details': {'cloudVendor': vend,
                                 'cloudLoc': cloc}}
 
-    def __execute_cloud_put(self, og_obj_id, tar_cloud_vendor, tar_cloud_loc):
-        pass
+
+def execute_cloud_get():
+    pass
+
+
+def execute_cloud_put(self, og_obj_id, tar_cloud_vendor, tar_cloud_loc):
+    pass
