@@ -12,12 +12,17 @@ class MetaData(Resource):
     ###########################################################################
     # REST API
     #
-    # GET
-    # DELETE
-    # POST
+    # GET - Return metadata (JSON) based upon objectID provided
+    # DELETE - Delete metadata based upon objectID provided
+    # POST - Post metadata
     ###########################################################################
-    def get(self):
-        pass
+    def get(self, obj_id=None):
+        # GET /parallel
+        if obj_id is None:
+            return {'valid_parent_ids': self.par_db.api_get_all_id()}
+        # GET /parallel/obj_id/
+        else:
+            return self.par_db.api_get_object(str(obj_id))
 
     def delete(self, obj_id=None):
         # DELETE /meta
@@ -72,8 +77,8 @@ class Parallel(Resource):
     ###########################################################################
     # REST API
     #
-    # GET
-    # PUT
+    # GET -
+    # PUT -
     ###########################################################################
     def get(self, obj_id=None):
         # GET /parallel
@@ -94,8 +99,8 @@ class Cloud(Resource):
     ###########################################################################
     # REST API
     #
-    # GET
-    # PUT
+    # GET -
+    # PUT -
     ###########################################################################
     def get(self, obj_id=None):
         # GET /cloud
@@ -120,19 +125,34 @@ class Cloud(Resource):
                 # PUT /cloud/obj_id/cloud_vendor
                 return {'error': 'no cloud location can be established'}
 
-            if self.__execute_cloud_put(obj_id, vend, cloc):
+            if execute_cloud_put(obj_id, vend, cloc):
                 pass  # Success
             else:
                 pass  # Failure
 
+        # TODO: re-implement method for writing new object to DB
+        #       remember that object may be created based upon
+        #       decided PUT/GET context
         # TODO: clean up and supply useful information
         return {'PUT details': {'cloudVendor': vend,
                                 'cloudLoc': cloc}}
 
 
-def execute_cloud_get():
+def execute_cloud_get(og_obj_id, tar_par_loc):
+    # TODO: download file from CLOUD
     pass
 
 
-def execute_cloud_put(self, og_obj_id, tar_cloud_vendor, tar_cloud_loc):
+def execute_cloud_put(og_obj_id, tar_cloud_vendor, tar_cloud_loc):
+    # TODO: upload file to CLOUD
+    pass
+
+
+def execute_parallel_get(og_obj_id, tar_par_loc):
+    # TODO: download file from PARALLEL
+    pass
+
+
+def execute_parallel_put(og_obj_id, tar_par_loc):
+    # TODO: upload file to PARALLEL
     pass
