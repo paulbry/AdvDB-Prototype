@@ -18,7 +18,7 @@ from google.cloud import storage, exceptions
 
 
 def gcloud_create_bucket(bucket_name):
-    """Creates a new bucket."""
+    """Creates a new bucket (if not already present) """
     storage_client = storage.Client()
     try:
         bucket = storage_client.create_bucket(bucket_name)
