@@ -1,5 +1,5 @@
 # 3rd party
-from google.cloud import storage
+from google.cloud import storage, exceptions
 
 
 ###############################################################################
@@ -20,8 +20,11 @@ from google.cloud import storage
 def gcloud_create_bucket(bucket_name):
     """Creates a new bucket."""
     storage_client = storage.Client()
-    bucket = storage_client.create_bucket(bucket_name)
-    print('Bucket {} created'.format(bucket.name))
+    try:
+        bucket = storage_client.create_bucket(bucket_name)
+        print('Bucket {} created'.format(bucket.name))
+    except exceptions.Conflict:
+        print('Bucket {} already exists'.format(bucket_name))
 
 
 def gcloud_upload_blob(bucket_name, source_file_name, destination_blob_name):
