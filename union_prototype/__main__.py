@@ -25,7 +25,7 @@ parser.add_argument("-d", "--debug",
                     dest='debug', action='store_true',
                     default=False,
                     help="Enable Flask's debug mode (default = False)")
-
+# TODO: at this moment the database related args are not used, address if required
 parser.add_argument("-u", "--db-url",
                     dest='db_url', nargs=1,
                     default='localhost',
