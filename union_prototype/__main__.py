@@ -3,8 +3,6 @@ import argparse
 import os
 import sys
 # 3rd party
-from flask import Flask
-from flask_restful import Api
 from termcolor import cprint
 # project
 from union_prototype import api as api_pack
@@ -27,7 +25,7 @@ parser.add_argument("-d", "--debug",
                     dest='debug', action='store_true',
                     default=False,
                     help="Enable Flask's debug mode (default = False)")
-
+# TODO: at this moment the database related args are not used, address if required
 parser.add_argument("-u", "--db-url",
                     dest='db_url', nargs=1,
                     default='localhost',
@@ -39,31 +37,14 @@ parser.add_argument("-p", "--db-port",
                     help="Port for database service (default = 27017)")
 
 
-# noinspection PyTypeChecker
 def manage_args(args):
-    app = Flask(__name__)
-    api = Api(app)
-
     tmp_db = db_interface.DatabaseCtl()
     if not os.path.isfile(tmp_db.db_loc):
         tmp_db.create_object_db()
 
-        # Parallel (e.g. Lustre) resources
-    api.add_resource(api_pack.Parallel, '/parallel',
-                     '/parallel/<string:obj_id>',
-                     '/parallel/<string:obj_id>/<string:file_sys>')
+    launch_verification()
 
-    # Cloud (e.g. Google Cloud Storage, Amazon S3) resources
-    api.add_resource(api_pack.Cloud, '/cloud',
-                     '/cloud/<string:obj_id>',
-                     '/cloud/<string:obj_id>/<string:cloud_vendor>',
-                     '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>')
-
-    # MetaData (PUT/DELETE entries in DB only!) resource
-    api.add_resource(api_pack.MetaData, '/meta',
-                     '/meta/<string:obj_id>')
-
-    app.run(debug=args.debug)
+    api_pack.main(debug=args.debug, db_url=args.db_url, db_port=args.db_port)
 
 
 def launch_verification():
