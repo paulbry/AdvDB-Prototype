@@ -15,7 +15,6 @@ app = Flask(__name__)
 # noinspection PyTypeChecker
 api = Api(app)
 
-# TODO: clearly document in a forward facing way
 # At this moment the newObjID is more or less required for a number of interactions
 # This can/should be corrected after we have finalized the hash & split functionality
 # as these directly play into the naming conventions
