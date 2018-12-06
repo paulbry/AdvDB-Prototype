@@ -20,6 +20,10 @@ from google.cloud import storage, exceptions
 #   * https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html
 #   We assume that the user has properly provided the required application
 #   credentials (https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)
+#   Note, for access ID/key
+#       1. http://aws.amazon.com/
+#       2. Account menu -> Security Credentials
+#       3. Access keys (access key ID and secret access key) -> Create New Access Key
 ###############################################################################
 
 
