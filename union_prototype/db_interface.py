@@ -133,12 +133,16 @@ class DatabaseCtl(object):
         mydb = self.__connect_db()
         cursor = mydb.cursor()
 
-        if self.__execute_query(cursor, cmd):
-            val = True, cursor.fetchone()[0]
-        else:
-            val = False, None
+        try:
+            if self.__execute_query(cursor, cmd):
+                val = True, cursor.fetchone()[0]
+            else:
+                val = False, None
+        except TypeError:
+            return False
 
         self.__close_db(mydb, False)
+
         return val
 
     def safe_delete_entry(self, index, value):

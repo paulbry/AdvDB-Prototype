@@ -53,14 +53,12 @@ class MetaData(Resource):
         # DELETE /meta/obj_id/
         else:
             if self.meta_db.safe_query_value('objectID', obj_id, 'parallelLoc'):
-                # TODO: implement support for removing ALL CHILDREN
                 self.meta_db.safe_delete_entry('objectID', obj_id)
                 return {'True': 'Success: Removed {0}'.format(obj_id)}
             return {'False': 'Error: Unable to identify {0}'.format(obj_id)}
 
     def post(self):
         json_data = request.get_json(force=True)
-        # TODO: support nested or large posts (here or elsewhere)?
         b, m = self.__process_obj_input(json_data)
         return {b: m}
 
