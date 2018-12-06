@@ -19,7 +19,10 @@ from termcolor import cprint
 class DatabaseCtl(object):
     def __init__(self):
         # hardcoded paths (need to alter)
-        self.db_loc = os.path.dirname(os.path.realpath(__file__)) + "/.protodb"
+        self.db_name = '.protodb'
+        self.db_loc = "{0}/{1}".format(
+            os.path.dirname(os.path.realpath(__file__)), self.db_name
+        )
         self.table = "objectdata"
 
     def create_object_db(self):
@@ -133,12 +136,16 @@ class DatabaseCtl(object):
         mydb = self.__connect_db()
         cursor = mydb.cursor()
 
-        if self.__execute_query(cursor, cmd):
-            val = True, cursor.fetchone()[0]
-        else:
-            val = False, None
+        try:
+            if self.__execute_query(cursor, cmd):
+                val = True, cursor.fetchone()[0]
+            else:
+                val = False, None
+        except TypeError:
+            return False
 
         self.__close_db(mydb, False)
+
         return val
 
     def safe_delete_entry(self, index, value):

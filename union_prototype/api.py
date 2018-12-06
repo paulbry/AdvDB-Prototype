@@ -15,15 +15,17 @@ app = Flask(__name__)
 # noinspection PyTypeChecker
 api = Api(app)
 
-# TODO: clearly document in a forward facing way
 # At this moment the newObjID is more or less required for a number of interactions
 # This can/should be corrected after we have finalized the hash & split functionality
 # as these directly play into the naming conventions
 parser = reqparse.RequestParser()
-parser.add_argument('task')  # Temporary, used in a few tests and should be removed
 parser.add_argument('removeAfter', type=bool, default=False)
 parser.add_argument('newObjID', default=None)
 parser.add_argument('download', type=bool, default=False)
+parser.add_argument('backup', type=bool, default=False)
+parser.add_argument('restore', type=bool, default=False)
+parser.add_argument('split', type=int, default=0)
+parser.add_argument('join', type=int, default=0)
 
 
 class MetaData(Resource):
@@ -32,6 +34,8 @@ class MetaData(Resource):
         self.db_port = kwargs['db_port']
 
         self.meta_db = db_interface.DatabaseCtl()
+
+        self.backup_bucket = "db_backup_advdb18"
 
     ###########################################################################
     # REST API
@@ -43,11 +47,24 @@ class MetaData(Resource):
     def get(self, obj_id=None):
         # GET /parallel
         if obj_id is None:
-            # TODO: general TODO across api.py is add error code to return tuple
-            return {'valid_parent_ids': self.par_db.api_get_all_id()}
+            return {'valid_parent_ids': self.meta_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
-            return self.par_db.api_get_object(str(obj_id))
+            return self.meta_db.api_get_object(str(obj_id))
+
+    def put(self):
+        args = parser.parse_args()
+        if args.backup:
+            up_ci.gcloud_create_bucket(self.backup_bucket)
+            up_ci.gcloud_upload_blob(self.backup_bucket, self.meta_db.db_loc,
+                                     self.meta_db.db_name)
+            return {'success': 'database backup'}
+        elif args.restore:
+            up_ci.gcloud_download_blob(self.backup_bucket, self.meta_db.db_name,
+                                       self.meta_db.db_loc)
+            return {'success': 'database restore'}
+        else:
+            return {'error': 'backup or restore must be declared'}, 400
 
     def delete(self, obj_id=None):
         # DELETE /meta
@@ -56,14 +73,12 @@ class MetaData(Resource):
         # DELETE /meta/obj_id/
         else:
             if self.meta_db.safe_query_value('objectID', obj_id, 'parallelLoc'):
-                # TODO: implement support for removing ALL CHILDREN
                 self.meta_db.safe_delete_entry('objectID', obj_id)
                 return {'True': 'Success: Removed {0}'.format(obj_id)}
-            return {'False': 'Error: Unable to identify {0}'.format(obj_id)}
+            return {'False': 'Error: Unable to identify {0}'.format(obj_id)}, 400
 
     def post(self):
         json_data = request.get_json(force=True)
-        # TODO: support nested or large posts (here or elsewhere)?
         b, m = self.__process_obj_input(json_data)
         return {b: m}
 
@@ -115,11 +130,13 @@ class Parallel(Resource):
             return {'valid_parent_ids': self.par_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
+            # TODO: complete copy step (integrate support for split)
             return self.par_db.api_get_object(str(obj_id))
 
     def put(self):
         args = parser.parse_args()
-        return {'task': args['task']}  # for testing / example ATM
+        # TODO: complete (Upload file from cloud to file system)
+        pass
 
 
 class Cloud(Resource):
@@ -157,38 +174,40 @@ class Cloud(Resource):
 
         # PUT /cloud
         if obj_id is None:
-            return {'unsupported': 'A valid objectID must be provided'}
+            return {'unsupported': 'A valid objectID must be provided'}, 400
         else:
             vend = cloud_vendor
             if cloud_vendor is None:
                 # PUT /cloud/obj_id
-                return {'error': 'no cloud vendor can be established'}
+                return {'error': 'no cloud vendor can be established'}, 400
 
             cloc = cloud_loc
             if cloud_loc is None:
                 # PUT /cloud/obj_id/cloud_vendor
-                return {'error': 'no cloud location can be established'}
+                return {'error': 'no cloud location can be established'}, 400
 
             new_obj_id = args.newObjID
             if args.newObjID is None:
                 # TODO: determine plan for creating obj_id
                 pass
 
+            # TODO: integrate support for split
+
             og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
             file_hash = "TEST"   # TODO: implement has support
             parent = None  # TODO: implement concept of parent? (maybe if split)
 
-            b, id = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
-                                      tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
-                                      tar_cloud_loc=cloc, remove_after=args.removeAfter)
+            b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
+                                     tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
+                                     tar_cloud_loc=cloc, remove_after=args.removeAfter)
             if b:
                 if args.removeAfter:
                     self.cld_db.safe_delete_entry('objectID', obj_id)
                 self.cld_db.api_insert_event(new_obj_id, og_par_loc, cloc, file_hash,
                                              parent, vend)
-                return id  # Success
+                return i  # Success
             else:
-                return id  # Failure
+                return i, 400  # Failure
 
 
 def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
@@ -274,4 +293,4 @@ def main(debug, db_url, db_port):
                      })
 
     app.run(debug=debug)
-
+# TODO: create demo and update README
