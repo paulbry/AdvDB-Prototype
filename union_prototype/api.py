@@ -29,6 +29,8 @@ parser.add_argument('backup', type=bool, default=False)
 parser.add_argument('restore', type=bool, default=False)
 parser.add_argument('split', type=int, default=0)
 parser.add_argument('join', type=int, default=0)
+parser.add_argument('stripeSize', default=None)
+parser.add_argument('stripeCount', default=None)
 
 
 class MetaData(Resource):
@@ -127,19 +129,110 @@ class Parallel(Resource):
     #       query the DB for information related to objects
     # PUT - Upload file from cloud to file system
     ###########################################################################
-    def get(self, obj_id=None):
+    def get(self, obj_id=None, tar_par_loc=None):
+        args = parser.parse_args()
+
         # GET /parallel
         if obj_id is None:
             return {'valid_parent_ids': self.par_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
-            # TODO: complete copy step (integrate support for split)
+            if args.split != 0 or args.join != 0:
+                # TODO: complete copy step (integrate support for split)
+                return {'invalid': 'split & join not fully implemented at this time'}, 500
+
+            # set stripe information on target location (if supplied)
+            self.__set_lustre_stripe(args.stripeSize, args.stripeCount, tar_par_loc)
+
+            # TODO: test and review (we could also add mpi nodes parameters if needed)
+            execute_parallel_get(obj_id, tar_par_loc, args.removeAfter)
+
+            # Check hash only if present
+            check_hash = self.par_db.safe_query_value('objectID', obj_id,
+                                                      'verificationHash')[1]
+            if check_hash is not None:
+                tmp_hash = hashlib.md5(
+                    open('{0}/{1}'.format(tar_par_loc, obj_id), 'rb').read()).hexdigest()
+                if tmp_hash != check_hash:
+                    os.remove(tar_par_loc + '/' + obj_id)
+                    return {'error': 'hash does not match {0}  !=  {1}'.format(
+                        check_hash, tmp_hash
+                    )}, 400
+
+            # Remove file from cloud after process completed
+            if args.removeAfter:
+                self.par_db.safe_delete_entry('objectID', obj_id)
+                self.par_db.api_insert_event(obj_id, tar_par_loc, None,
+                                             check_hash, None,
+                                             None)
+                return {'success': '{0} downloaded to {1} and removed from Cloud'.format(
+                    obj_id, tar_par_loc
+                )}
+
             return self.par_db.api_get_object(str(obj_id))
 
-    def put(self):
+    def put(self, obj_id=None):
         args = parser.parse_args()
-        # TODO: complete (Upload file from cloud to file system)
-        pass
+
+        if obj_id is None:
+            return {'valid_parent_ids': self.par_db.api_get_all_id()}
+        if args.split != 0 or args.join != 0:
+            # TODO: complete copy step (integrate support for split)
+            return {'invalid': 'split & join not fully implemented at this time'}, 500
+        tar_par_loc = (self.par_db.safe_query_value('objectID',
+                                                    obj_id, 'parallelLoc'))[1]
+        og_cloud_vendor = (self.par_db.safe_query_value('objectID',
+                                                        obj_id, 'cloudVendor'))[1]
+        og_cloud_loc = (self.par_db.safe_query_value('objectID',
+                                                     obj_id, 'cloudLoc'))[1]
+
+        # set stripe information on target location (if supplied)
+        self.__set_lustre_stripe(args.stripeSize, args.stripeCount, tar_par_loc)
+
+        # TODO: test and review (we could also add mpi nodes parameters if needed)
+        execute_parallel_put(obj_id, og_cloud_vendor, og_cloud_loc, tar_par_loc,
+                             obj_id, args.removeAfter)
+
+        # Check hash only if present
+        check_hash = self.par_db.safe_query_value('objectID', obj_id,
+                                                  'verificationHash')[1]
+        if check_hash is not None:
+            tmp_hash = hashlib.md5(
+                open('{0}/{1}'.format(tar_par_loc, obj_id), 'rb').read()).hexdigest()
+            if tmp_hash != check_hash:
+                os.remove(tar_par_loc + '/' + obj_id)
+                return {'error': 'hash does not match {0}  !=  {1}'.format(
+                    check_hash, tmp_hash
+                )}, 400
+
+        # Remove file from cloud after process completed
+        if args.removeAfter:
+            self.par_db.safe_delete_entry('objectID', obj_id)
+            self.par_db.api_insert_event(obj_id, tar_par_loc, None,
+                                         check_hash, None,
+                                         None)
+            return {'success': '{0} downloaded to {1} and removed from Cloud'.format(
+                obj_id, tar_par_loc
+            )}
+
+        return self.par_db.api_get_object(str(obj_id))  # information relating to object DL
+
+    @staticmethod
+    def __set_lustre_stripe(size, count, location):
+        """ Run lustre command (lsf) to set strip information for
+        the supplied location"""
+        if size is None and count is None:
+            return
+        else:
+            cmd = 'lsf setstripe'
+            if size is not None:
+                cmd += ' -s {}'.format(size)
+            if count is not None:
+                cmd += ' -c {}'.format(count)
+            cmd += ' {}'.format(location)
+
+            s = subprocess.Popen(cmd)
+            s.communicate()
 
 
 class Cloud(Resource):
@@ -165,6 +258,8 @@ class Cloud(Resource):
         # GET /cloud/obj_id/
         else:
             if args.download:  # signify a download should occur of
+                # Account for stripping requirements
+
                 # the object to parallelLoc
                 tar_par_loc = (self.cld_db.safe_query_value('objectID',
                                                             obj_id, 'parallelLoc'))[1]

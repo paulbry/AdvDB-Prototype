@@ -105,17 +105,22 @@ After completing the installation, starting the program is easy.
 
     * Resource: `/parallel/{objectID}/{targetFileLocation}`
     
-    * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
+    * Arguments: `newObjID=<string>` & `removeAfter=<bool>` & 
+    `stripeSize=<int>` & `stripeCount=<int>`
 
     1. ?
 
 * PUT
 
-    * Resource: `/parallel/{objectID}/{targetFileLocation}`
+    * Resource: `/parallel/{objectID}`
     
-    * Arguments: `split=<int>` & `join=<int>` & `newObjID=<string>` & `removeAfter=<bool>` 
+    * Arguments: `split=<int>` & `join=<int>` & `newObjID=<string>` & `removeAfter=<bool>` & 
+    `stripeSize=<int>` & `stripeCount=<int>`
 
-    1. ?
+    1. The first option
+    2. `$ curl 127.0.0.1:5000/parallel/exampleSplit -X PUT -d "split=5"`
+    3. ?
+    4. ?
 
 #### Cloud
 * GET
