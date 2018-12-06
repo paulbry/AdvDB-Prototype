@@ -6,6 +6,7 @@ from flask_restful import Resource, Api, reqparse
 # project
 from union_prototype import cloud_interface as up_ci
 from union_prototype import db_interface
+import subprocess
 
 ###########################################################################
 # Flask-Restful API
@@ -192,7 +193,7 @@ class Cloud(Resource):
                 pass
 
             # TODO: integrate support for split
-
+            subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'split.py', obj_id, cloud_loc, 500])
             og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
             file_hash = "TEST"   # TODO: implement has support
             parent = None  # TODO: implement concept of parent? (maybe if split)
@@ -253,6 +254,7 @@ def execute_cloud_put(og_obj_id, og_par_loc,
 def execute_parallel_get(og_obj_id, tar_par_loc, remove_after):
     """ Copy file from mounted files system to mounted system """
     # TODO: download file from PARALLEL
+    subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'getParallel.py', og_obj_id])
     pass
 
 
@@ -260,6 +262,7 @@ def execute_parallel_put(og_obj_id, og_cloud_vendor, og_cloud_loc,
                          tar_obj_id, tar_par_loc, remove_after):
     """ Upload file from cloud to file system """
     # TODO: upload file to PARALLEL
+    subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'putParallel.py', tar_obj_id, og_cloud_vendor, tar_par_loc])
     pass
 
 
