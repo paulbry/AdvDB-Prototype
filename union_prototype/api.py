@@ -231,6 +231,7 @@ class Cloud(Resource):
 
             if nodes is not None:
                 # When nodes is present execute (.../mpi/:nodes)
+                # TODO: we need to test and expand up on
                 subprocess.check_output(['mpiexec', '-n', nodes, '-usize', '17', 'python',
                                          'split.py', obj_id, cloud_loc, 500])
                 return {'success': 'mpiexec completed for {0} nodes'.format(nodes)}
