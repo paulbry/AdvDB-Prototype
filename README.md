@@ -15,13 +15,14 @@ Before proceeding with the install verify the the
         * Use "Command Line"
 
 1. `$ git clone https://github.com/paulbry/AdvDB-Prototype`
-2. `$ cd AdvDB-Prototype/union_prototype`
-3. `$ pip install .`
+2. `$ cd AdvDB-Prototype`
+3. `$ pip install . --user`
+4. `export PATH=$HOME/.local/bin:$PATH`
 
 ### Prototype Demonstration
-TODO: outline currently support functionality with demonstration
+After completing the installation, starting the program is easy.
 
-`$ ???`
+* `$ union-prototype`
 
 #### Meta-Data
 * POST
