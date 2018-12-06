@@ -120,9 +120,9 @@ After completing the installation, starting the program is easy.
 #### Cloud
 * GET
 
-    * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`
+    * Resource: `/cloud/{objectID}`
 
-    * Arguments: `newObjID=<string>` & `removeAfter=<bool>` & `download=<bool>`
+    * Arguments: `removeAfter=<bool>` & `download=<bool>`
 
     1. GET can be used in a similar method that of other methods in order to obtain information on a file.
     2. `$ curl 127.0.0.1:5000/cloud -X GET`
