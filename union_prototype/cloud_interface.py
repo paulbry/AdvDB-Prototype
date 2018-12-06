@@ -19,7 +19,7 @@ from google.cloud import storage, exceptions
 # Amazon AWS S3
 #   * https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html
 #   We assume that the user has properly provided the required application
-#   credentials ... # TODO: complete documentation
+#   credentials (https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html)
 ###############################################################################
 
 
