@@ -155,4 +155,18 @@ After completing the installation, starting the program is easy.
     6. CloudLoc must be present (not necessarily existing) --> `{"error": "no cloud location can be established"}`
     7. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud/my-test-bucket-987 -X PUT`
     8. If the `newObjID` argument is provided the system will use this ObjectID instead and create a new instance in the database. The old object will remain the same.
-    9. 
+    9. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud/my-test-bucket-987 -X PUT`
+    10. The above will upload ("PUT") the file in the defined parallel location to the supplied bucket.
+    11. `{"success": "uploaded file"}`
+    12. The success message is minimal; however, if we examine the Google Cloud Storage platform we will see that 
+    in the `my-test-bucket` that there is now the `putExample` file and the database looks as such:
+    
+    | objectID | parallelLoc | cloudLoc | cloudVendor | verificationHash | parentID | time |
+    |----------|-------------|----------|-------------|------------------|----------|------|
+    | putExample | /var/tmp | my-test-bucket-987 | gcloud | 52cd12842fecfe47b404c758773b913b | null | 2018-12-05 13:51:56 |
+    
+    13. Similar to the GET API, there is support for a `removeAfter` argument that will remove the local parallel instance of the object 
+    after the upload has been completed.
+    
+    * MPI
+        1. ?  

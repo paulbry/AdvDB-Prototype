@@ -216,32 +216,35 @@ class Cloud(Resource):
 
             # Fetch information
             og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id,
-                                                       'parallelLoc'))[0]
+                                                       'parallelLoc'))[1]
             file_hash = hashlib.md5(
                         open('{0}/{1}'.format(og_par_loc, obj_id), 'rb').read()).\
                 hexdigest()
             parent = None  # Not supported in PUT at this time!
 
+            og_obj_id = obj_id
             new_obj_id = args.newObjID
-            if args.newObjID is None:
+            if args.newObjID is not None:
                 # Duplicate existing Object's information (not in cloud yet...)
                 self.cld_db.api_insert_event(new_obj_id, og_par_loc, None,
                                              file_hash, parent, None)
                 obj_id = new_obj_id
 
             if nodes is not None:
+                ###############################################################
+                # Goal: to support MPI execution of PUT
                 # When nodes is present execute (.../mpi/:nodes)
-                # TODO: we need to test and expand up on
+                # TODO: we need to test and expand upon
+                ###############################################################
                 subprocess.check_output(['mpiexec', '-n', nodes, '-usize', '17', 'python',
                                          'split.py', obj_id, cloud_loc, 500])
                 return {'success': 'mpiexec completed for {0} nodes'.format(nodes)}
 
             b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
-                                     tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
+                                     tar_obj_id=obj_id, tar_cloud_vendor=vend,
                                      tar_cloud_loc=cloc, remove_after=args.removeAfter)
             if b:
-                if args.removeAfter:
-                    self.cld_db.safe_delete_entry('objectID', obj_id)
+                self.cld_db.safe_delete_entry('objectID', og_obj_id)  # remove old before new
                 self.cld_db.api_insert_event(obj_id, og_par_loc, cloc, file_hash,
                                              parent, vend)
                 return i  # Success
@@ -270,7 +273,7 @@ class Cloud(Resource):
             # PUT /cloud/obj_id/cloud_vendor
             return False, {'error': 'no cloud location can be established'}, 400
 
-        return False, cloud_vendor, cloud_loc
+        return True, cloud_vendor, cloud_loc
 
 
 def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
@@ -310,7 +313,7 @@ def execute_cloud_put(og_obj_id, og_par_loc,
             tar_cloud_vendor
         )}
 
-    return False, {'error': 'Unable to run execute_cloud_put'}
+    return True, {'success': 'uploaded file'}
 
 
 def execute_parallel_get(og_obj_id, tar_par_loc, remove_after):
