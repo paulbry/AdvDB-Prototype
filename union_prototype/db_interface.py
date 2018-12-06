@@ -142,7 +142,7 @@ class DatabaseCtl(object):
             else:
                 val = False, None
         except TypeError:
-            return False
+            return False, None
 
         self.__close_db(mydb, False)
 

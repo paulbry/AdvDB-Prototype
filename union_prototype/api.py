@@ -199,31 +199,36 @@ class Cloud(Resource):
 
             return self.cld_db.api_get_object(str(obj_id))  # information relating to object DL
 
-    def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None):
+    def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None, nodes=None):
         args = parser.parse_args()
 
         # PUT /cloud
         if obj_id is None:
             return {'unsupported': 'A valid objectID must be provided'}, 400
         else:
-            vend = cloud_vendor
-            if cloud_vendor is None:
-                # PUT /cloud/obj_id
-                return {'error': 'no cloud vendor can be established'}, 400
+            valid, obj_id, par_loc = self.__put_verify_obj(obj_id)
+            if not valid:
+                return obj_id, par_loc
 
-            cloc = cloud_loc
-            if cloud_loc is None:
-                # PUT /cloud/obj_id/cloud_vendor
-                return {'error': 'no cloud location can be established'}, 400
+            valid, vend, cloc = self.__put_verify_cloud(cloud_vendor, cloud_loc)
+            if not valid:
+                return vend, cloc
 
             new_obj_id = args.newObjID
             if args.newObjID is None:
                 # TODO: determine plan for creating obj_id
                 pass
 
-            subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'split.py', obj_id, cloud_loc, 500])
-            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
-            file_hash = "TEST"   # TODO: implement has support
+            if nodes is not None:
+                # When nodes is present execute (.../mpi/:nodes)
+                subprocess.check_output(['mpiexec', '-n', nodes, '-usize', '17', 'python',
+                                         'split.py', obj_id, cloud_loc, 500])
+                return {'success': 'mpiexec completed for {0} nodes'.format(nodes)}
+
+            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id,
+                                                       'parallelLoc'))[0]
+            file_hash = hashlib.md5(
+                        open('{0}/{1}'.format(og_par_loc, obj_id), 'rb').read()).hexdigest()
             parent = None
 
             b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
@@ -237,6 +242,30 @@ class Cloud(Resource):
                 return i  # Success
             else:
                 return i, 400  # Failure
+
+    def __put_verify_obj(self, obj_id):
+        """ Verify objectID """
+        b, pl = self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc')
+        if b:
+            return True, obj_id, pl
+        else:
+            return False, {'error': 'invalid original objectID'}, 400
+
+    @staticmethod
+    def __put_verify_cloud(cloud_vendor, cloud_loc):
+        """ Check cloud parameters in PUT """
+        if cloud_vendor is None:
+            # PUT /cloud/obj_id
+            return False, {'error': 'no cloud vendor can be established'}, 400
+
+        if cloud_vendor != 'gcloud' and cloud_vendor != 'aws':
+            return False, {'error': 'unsupported cloud_vendor'}, 400
+
+        if cloud_loc is None:
+            # PUT /cloud/obj_id/cloud_vendor
+            return False, {'error': 'no cloud location can be established'}, 400
+
+        return False, cloud_vendor, cloud_loc
 
 
 def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
@@ -310,6 +339,7 @@ def main(debug, db_url, db_port):
                      '/cloud/<string:obj_id>',
                      '/cloud/<string:obj_id>/<string:cloud_vendor>',
                      '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>',
+                     '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>/mpi/<int:nodes>',
                      resource_class_kwargs={
                          'db_url': db_url,
                          'db_port': db_port

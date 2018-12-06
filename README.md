@@ -143,9 +143,15 @@ After completing the installation, starting the program is easy.
     
 * PUT
 
-    * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`
+    * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}/mpi/{nodes}`
     
     * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
 
-    1. ?
-    
+    1. `$ curl 127.0.0.1:5000/cloud/bad -X PUT`
+    2. ObjectID is verified --> `{"error": "invalid original objectID"}`
+    3. `$ curl 127.0.0.1:5000/cloud/putExample/dropbox -X PUT`
+    4. CloudVendor is verified (supported only) --> `{"error": "unsupported cloud_vendor"}`
+    5. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud -X PUT`
+    6. CloudLoc must be present (not necessarily existing) --> `{"error": "no cloud location can be established"}`
+    7. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud/my-test-bucket-987 -X PUT`
+    8. 
