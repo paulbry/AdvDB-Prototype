@@ -284,8 +284,9 @@ def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
         if remove_after:
             up_ci.gcloud_delete_blob(og_cloud_loc, og_obj_id)
     elif og_cloud_vendor == 'aws':
-        # TODO: add aws support and potentially reformat via adapter pattern?
-        return False, {'error': 'AWS is currently unsupported'}
+        up_ci.aws_download_blob(og_cloud_loc, og_obj_id, tar_par_loc + "/" + tar_obj_id)
+        if remove_after:
+            up_ci.aws_delete_blob(og_cloud_loc, og_obj_id)
     else:
         return False, {'error': 'Unsupported cloud vendor {0} provided'.format(
             og_cloud_vendor
@@ -306,8 +307,11 @@ def execute_cloud_put(og_obj_id, og_par_loc,
         if remove_after:
             os.remove(og_par_loc + "/" + og_obj_id)
     elif tar_cloud_vendor == 'aws':
-        # TODO: add aws support and potentially reformat via adapter pattern?
-        return False, {'error': 'AWS is currently unsupported'}
+        up_ci.aws_create_bucket(tar_cloud_loc)
+        up_ci.aws_upload_blob(tar_cloud_loc, og_par_loc + "/" + og_obj_id,
+                              tar_obj_id)
+        if remove_after:
+            os.remove(og_par_loc + "/" + og_obj_id)
     else:
         return False, {'error': 'Unsupported cloud vendor {0} provided'.format(
             tar_cloud_vendor
