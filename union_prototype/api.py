@@ -24,6 +24,8 @@ parser.add_argument('newObjID', default=None)
 parser.add_argument('download', type=bool, default=False)
 parser.add_argument('backup', type=bool, default=False)
 parser.add_argument('restore', type=bool, default=False)
+parser.add_argument('split', type=int, default=0)
+parser.add_argument('join', type=int, default=0)
 
 
 class MetaData(Resource):

@@ -43,13 +43,13 @@ After completing the installation, starting the program is easy.
            "parallelLoc":"/var/tmp",
            "cloudLoc":"test",
            "verificationHast":"a12b",
-           "cloudVendor":"gcloud",
+           "cloudVendor":"gcloud"
         }
         ```
     3. `{"true": "Successfully POST object example"}`
 * GET
 
-    * Resource: `\meta\<objectID>`
+    * Resource: `\meta\{objectID}`
     
     * Arguments: `None`
 
@@ -67,13 +67,13 @@ After completing the installation, starting the program is easy.
            "verificationHash": null, 
            "parentID": null, 
            "time": "2018-12-06 02:01:32", 
-           "cloudVendor": "gcloud",
-         },
+           "cloudVendor": "gcloud"
+         }
         }
         ```
 * DELETE
     
-    * Resource: `\meta\<objectID>`
+    * Resource: `\meta\{objectID}`
     
     * Arguments: `None`
 
@@ -101,7 +101,36 @@ After completing the installation, starting the program is easy.
     6. You will then find the database under the (default) `db_backup_advdb18` bucket
 
 #### Parallel
-?
+* GET
+
+    * Resource: `/parallel/{objectID}/{targetFileLocation}`
+    
+    * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
+
+    1. ?
+
+* PUT
+
+    * Resource: `/parallel/{objectID}/{targetFileLocation}`
+    
+    * Arguments: `split=<int>` & `join=<int>` & `newObjID=<string>` & `removeAfter=<bool>`
+
+    1.?
 
 #### Cloud
-?
+* GET
+
+    * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`
+
+    * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
+
+    1. ?
+
+* PUT
+
+    * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`
+    
+    * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
+
+    1. ?
+    
