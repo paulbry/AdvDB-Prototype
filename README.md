@@ -154,4 +154,5 @@ After completing the installation, starting the program is easy.
     5. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud -X PUT`
     6. CloudLoc must be present (not necessarily existing) --> `{"error": "no cloud location can be established"}`
     7. `$ curl 127.0.0.1:5000/cloud/putExample/gcloud/my-test-bucket-987 -X PUT`
-    8. 
+    8. If the `newObjID` argument is provided the system will use this ObjectID instead and create a new instance in the database. The old object will remain the same.
+    9. 

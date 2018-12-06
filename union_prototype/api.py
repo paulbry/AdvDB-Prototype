@@ -206,18 +206,28 @@ class Cloud(Resource):
         if obj_id is None:
             return {'unsupported': 'A valid objectID must be provided'}, 400
         else:
+            # Basic levels of verification preformed
             valid, obj_id, par_loc = self.__put_verify_obj(obj_id)
             if not valid:
                 return obj_id, par_loc
-
             valid, vend, cloc = self.__put_verify_cloud(cloud_vendor, cloud_loc)
             if not valid:
                 return vend, cloc
 
+            # Fetch information
+            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id,
+                                                       'parallelLoc'))[0]
+            file_hash = hashlib.md5(
+                        open('{0}/{1}'.format(og_par_loc, obj_id), 'rb').read()).\
+                hexdigest()
+            parent = None  # Not supported in PUT at this time!
+
             new_obj_id = args.newObjID
             if args.newObjID is None:
-                # TODO: determine plan for creating obj_id
-                pass
+                # Duplicate existing Object's information (not in cloud yet...)
+                self.cld_db.api_insert_event(new_obj_id, og_par_loc, None,
+                                             file_hash, parent, None)
+                obj_id = new_obj_id
 
             if nodes is not None:
                 # When nodes is present execute (.../mpi/:nodes)
@@ -225,19 +235,13 @@ class Cloud(Resource):
                                          'split.py', obj_id, cloud_loc, 500])
                 return {'success': 'mpiexec completed for {0} nodes'.format(nodes)}
 
-            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id,
-                                                       'parallelLoc'))[0]
-            file_hash = hashlib.md5(
-                        open('{0}/{1}'.format(og_par_loc, obj_id), 'rb').read()).hexdigest()
-            parent = None
-
             b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
                                      tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
                                      tar_cloud_loc=cloc, remove_after=args.removeAfter)
             if b:
                 if args.removeAfter:
                     self.cld_db.safe_delete_entry('objectID', obj_id)
-                self.cld_db.api_insert_event(new_obj_id, og_par_loc, cloc, file_hash,
+                self.cld_db.api_insert_event(obj_id, og_par_loc, cloc, file_hash,
                                              parent, vend)
                 return i  # Success
             else:
