@@ -114,10 +114,12 @@ class Parallel(Resource):
             return {'valid_parent_ids': self.par_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
+            # TODO: complete copy step (integrate support for split)
             return self.par_db.api_get_object(str(obj_id))
 
     def put(self):
         args = parser.parse_args()
+        # TODO: complete (Upload file from cloud to file system)
         pass
 
 
@@ -172,6 +174,8 @@ class Cloud(Resource):
             if args.newObjID is None:
                 # TODO: determine plan for creating obj_id
                 pass
+
+            # TODO: integrate support for split
 
             og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
             file_hash = "TEST"   # TODO: implement has support
