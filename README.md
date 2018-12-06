@@ -113,19 +113,34 @@ After completing the installation, starting the program is easy.
 
     * Resource: `/parallel/{objectID}/{targetFileLocation}`
     
-    * Arguments: `split=<int>` & `join=<int>` & `newObjID=<string>` & `removeAfter=<bool>`
+    * Arguments: `split=<int>` & `join=<int>` & `newObjID=<string>` & `removeAfter=<bool>` 
 
-    1.?
+    1. ?
 
 #### Cloud
 * GET
 
     * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`
 
-    * Arguments: `newObjID=<string>` & `removeAfter=<bool>`
+    * Arguments: `newObjID=<string>` & `removeAfter=<bool>` & `download=<bool>`
 
-    1. ?
-
+    1. GET can be used in a similar method that of other methods in order to obtain information on a file.
+    2. `$ curl 127.0.0.1:5000/cloud -X GET`
+    3. Returns list of current top level parentIDs
+    4. `$ curl 127.0.0.1:5000/cloud/workingCode.tar.gz -X GET`
+    5. Information regarding a specific file, in this case `workingCode.tar.gz`
+    6. Can employee additional flags to `download` the ObjectID we specified
+    7. `$ curl 127.0.0.1:5000/cloud/workingCode.tar.gz -X GET -d "download=true"`
+    8. The file will download to the defined parallelLoc and since a verificationHash is present it will be checked
+    9. `$ ls /var/tmp` --> `workingCode.tar.gz`
+    10. `$ curl 127.0.0.1:5000/cloud/workingCode2.tar.gz -X GET -d "download=true"`
+    11. `{"error": "hash does not match BADHASH  !=  2d5b4b3740a4312cd67ccc80c1503b55"}`
+    12. Above you can see that the download will fail if that hash is present but does not match, the file will then be removed from the system.
+    13. The final argument that can be used is `removeAfter`, it will remove from cloud after the process is complete.
+    14. `$ curl 127.0.0.1:5000/cloud/remove1 -X GET -d "download=true" -d "removeAfter=true"`
+    15. The above statement will download the file from the appropriate cloudLoc but then remove it from that same location (after successful download) then update the database to match.
+    16. `{"success": "remove1 downloaded to /var/tmp and removed from Cloud"}`
+    
 * PUT
 
     * Resource: `/cloud/{objectID}/{cloudVendor}/{cloudLoc}`

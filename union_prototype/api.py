@@ -1,12 +1,14 @@
 # system
+import hashlib
 import os
+import subprocess
 # 3rd party
 from flask import request, Flask
 from flask_restful import Resource, Api, reqparse
 # project
 from union_prototype import cloud_interface as up_ci
 from union_prototype import db_interface
-import subprocess
+
 
 ###########################################################################
 # Flask-Restful API
@@ -162,13 +164,40 @@ class Cloud(Resource):
             return {'valid_parent_ids': self.cld_db.api_get_all_id(True)}
         # GET /cloud/obj_id/
         else:
-            if args.Download:
-                tar_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
-                og_cloud_vendor = (self.cld_db.safe_query_value('objectID', obj_id, 'cloudVendor'))[0]
-                og_cloud_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'cloudLoc'))[0]
-                execute_cloud_get(obj_id, og_cloud_vendor, og_cloud_loc, tar_par_loc, obj_id,
-                                  args.removeAfter)
-            return self.par_db.api_get_object(str(obj_id))
+            if args.download:  # signify a download should occur of
+                # the object to parallelLoc
+                tar_par_loc = (self.cld_db.safe_query_value('objectID',
+                                                            obj_id, 'parallelLoc'))[1]
+                og_cloud_vendor = (self.cld_db.safe_query_value('objectID',
+                                                                obj_id, 'cloudVendor'))[1]
+                og_cloud_loc = (self.cld_db.safe_query_value('objectID',
+                                                             obj_id, 'cloudLoc'))[1]
+                execute_cloud_get(obj_id, og_cloud_vendor, og_cloud_loc, tar_par_loc,
+                                  obj_id, args.removeAfter)
+
+                # Check hash only if present
+                check_hash = self.cld_db.safe_query_value('objectID', obj_id,
+                                                          'verificationHash')[1]
+                if check_hash is not None:
+                    tmp_hash = hashlib.md5(
+                        open('{0}/{1}'.format(tar_par_loc, obj_id), 'rb').read()).hexdigest()
+                    if tmp_hash != check_hash:
+                        os.remove(tar_par_loc + '/' + obj_id)
+                        return {'error': 'hash does not match {0}  !=  {1}'.format(
+                            check_hash, tmp_hash
+                        )}, 400
+
+                # Remove file from cloud after process completed
+                if args.removeAfter:
+                    self.cld_db.safe_delete_entry('objectID', obj_id)
+                    self.cld_db.api_insert_event(obj_id, tar_par_loc, None,
+                                                 check_hash, None,
+                                                 None)
+                    return {'success': '{0} downloaded to {1} and removed from Cloud'.format(
+                        obj_id, tar_par_loc
+                    )}
+
+            return self.cld_db.api_get_object(str(obj_id))  # information relating to object DL
 
     def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None):
         args = parser.parse_args()
@@ -192,11 +221,10 @@ class Cloud(Resource):
                 # TODO: determine plan for creating obj_id
                 pass
 
-            # TODO: integrate support for split
             subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'split.py', obj_id, cloud_loc, 500])
             og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
             file_hash = "TEST"   # TODO: implement has support
-            parent = None  # TODO: implement concept of parent? (maybe if split)
+            parent = None
 
             b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
                                      tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
