@@ -42,6 +42,8 @@ def manage_args(args):
     if not os.path.isfile(tmp_db.db_loc):
         tmp_db.create_object_db()
 
+    launch_verification()
+
     api_pack.main(debug=args.debug, db_url=args.db_url, db_port=args.db_port)
 
 
