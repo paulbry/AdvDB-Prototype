@@ -199,44 +199,81 @@ class Cloud(Resource):
 
             return self.cld_db.api_get_object(str(obj_id))  # information relating to object DL
 
-    def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None):
+    def put(self, obj_id=None, cloud_vendor=None, cloud_loc=None, nodes=None):
         args = parser.parse_args()
 
         # PUT /cloud
         if obj_id is None:
             return {'unsupported': 'A valid objectID must be provided'}, 400
         else:
-            vend = cloud_vendor
-            if cloud_vendor is None:
-                # PUT /cloud/obj_id
-                return {'error': 'no cloud vendor can be established'}, 400
+            # Basic levels of verification preformed
+            valid, obj_id, par_loc = self.__put_verify_obj(obj_id)
+            if not valid:
+                return obj_id, par_loc
+            valid, vend, cloc = self.__put_verify_cloud(cloud_vendor, cloud_loc)
+            if not valid:
+                return vend, cloc
 
-            cloc = cloud_loc
-            if cloud_loc is None:
-                # PUT /cloud/obj_id/cloud_vendor
-                return {'error': 'no cloud location can be established'}, 400
+            # Fetch information
+            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id,
+                                                       'parallelLoc'))[1]
+            file_hash = hashlib.md5(
+                        open('{0}/{1}'.format(og_par_loc, obj_id), 'rb').read()).\
+                hexdigest()
+            parent = None  # Not supported in PUT at this time!
 
+            og_obj_id = obj_id
             new_obj_id = args.newObjID
-            if args.newObjID is None:
-                # TODO: determine plan for creating obj_id
-                pass
+            if args.newObjID is not None:
+                # Duplicate existing Object's information (not in cloud yet...)
+                self.cld_db.api_insert_event(new_obj_id, og_par_loc, None,
+                                             file_hash, parent, None)
+                obj_id = new_obj_id
 
-            subprocess.check_output(['mpiexec', '-n', '1', '-usize', '17', 'python', 'split.py', obj_id, cloud_loc, 500])
-            og_par_loc = (self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc'))[0]
-            file_hash = "TEST"   # TODO: implement has support
-            parent = None
+            if nodes is not None:
+                ###############################################################
+                # Goal: to support MPI execution of PUT
+                # When nodes is present execute (.../mpi/:nodes)
+                # TODO: we need to test and expand upon
+                ###############################################################
+                subprocess.check_output(['mpiexec', '-n', nodes, '-usize', '17', 'python',
+                                         'split.py', obj_id, cloud_loc, 500])
+                return {'success': 'mpiexec completed for {0} nodes'.format(nodes)}
 
             b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
-                                     tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
+                                     tar_obj_id=obj_id, tar_cloud_vendor=vend,
                                      tar_cloud_loc=cloc, remove_after=args.removeAfter)
             if b:
-                if args.removeAfter:
-                    self.cld_db.safe_delete_entry('objectID', obj_id)
-                self.cld_db.api_insert_event(new_obj_id, og_par_loc, cloc, file_hash,
+                self.cld_db.safe_delete_entry('objectID', og_obj_id)  # remove old before new
+                self.cld_db.api_insert_event(obj_id, og_par_loc, cloc, file_hash,
                                              parent, vend)
                 return i  # Success
             else:
                 return i, 400  # Failure
+
+    def __put_verify_obj(self, obj_id):
+        """ Verify objectID """
+        b, pl = self.cld_db.safe_query_value('objectID', obj_id, 'parallelLoc')
+        if b:
+            return True, obj_id, pl
+        else:
+            return False, {'error': 'invalid original objectID'}, 400
+
+    @staticmethod
+    def __put_verify_cloud(cloud_vendor, cloud_loc):
+        """ Check cloud parameters in PUT """
+        if cloud_vendor is None:
+            # PUT /cloud/obj_id
+            return False, {'error': 'no cloud vendor can be established'}, 400
+
+        if cloud_vendor != 'gcloud' and cloud_vendor != 'aws':
+            return False, {'error': 'unsupported cloud_vendor'}, 400
+
+        if cloud_loc is None:
+            # PUT /cloud/obj_id/cloud_vendor
+            return False, {'error': 'no cloud location can be established'}, 400
+
+        return True, cloud_vendor, cloud_loc
 
 
 def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
@@ -247,8 +284,9 @@ def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
         if remove_after:
             up_ci.gcloud_delete_blob(og_cloud_loc, og_obj_id)
     elif og_cloud_vendor == 'aws':
-        # TODO: add aws support and potentially reformat via adapter pattern?
-        return False, {'error': 'AWS is currently unsupported'}
+        up_ci.aws_download_blob(og_cloud_loc, og_obj_id, tar_par_loc + "/" + tar_obj_id)
+        if remove_after:
+            up_ci.aws_delete_blob(og_cloud_loc, og_obj_id)
     else:
         return False, {'error': 'Unsupported cloud vendor {0} provided'.format(
             og_cloud_vendor
@@ -269,14 +307,17 @@ def execute_cloud_put(og_obj_id, og_par_loc,
         if remove_after:
             os.remove(og_par_loc + "/" + og_obj_id)
     elif tar_cloud_vendor == 'aws':
-        # TODO: add aws support and potentially reformat via adapter pattern?
-        return False, {'error': 'AWS is currently unsupported'}
+        up_ci.aws_create_bucket(tar_cloud_loc)
+        up_ci.aws_upload_blob(tar_cloud_loc, og_par_loc + "/" + og_obj_id,
+                              tar_obj_id)
+        if remove_after:
+            os.remove(og_par_loc + "/" + og_obj_id)
     else:
         return False, {'error': 'Unsupported cloud vendor {0} provided'.format(
             tar_cloud_vendor
         )}
 
-    return False, {'error': 'Unable to run execute_cloud_put'}
+    return True, {'success': 'uploaded file'}
 
 
 def execute_parallel_get(og_obj_id, tar_par_loc, remove_after):
@@ -310,6 +351,7 @@ def main(debug, db_url, db_port):
                      '/cloud/<string:obj_id>',
                      '/cloud/<string:obj_id>/<string:cloud_vendor>',
                      '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>',
+                     '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>/mpi/<int:nodes>',
                      resource_class_kwargs={
                          'db_url': db_url,
                          'db_port': db_port

@@ -16,7 +16,8 @@ setuptools.setup(
         'flask',
         'flask_restful',
         'google-cloud-storage',
-        'pymongo'
+        'pymongo',
+        'boto3'
     ],
     entry_points={
         'console_scripts': [
