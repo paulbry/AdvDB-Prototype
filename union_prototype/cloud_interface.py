@@ -1,4 +1,5 @@
 # 3rd party
+import boto3
 from google.cloud import storage, exceptions
 
 
@@ -14,6 +15,11 @@ from google.cloud import storage, exceptions
 #   * https://cloud.google.com/sdk/
 #   * https://cloud.google.com/storage/docs/reference/libraries#client
 #       -libraries-usage-python
+#
+# Amazon AWS S3
+#   * https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html
+#   We assume that the user has properly provided the required application
+#   credentials ... # TODO: complete documentation
 ###############################################################################
 
 
