@@ -41,11 +41,10 @@ class MetaData(Resource):
     def get(self, obj_id=None):
         # GET /parallel
         if obj_id is None:
-            # TODO: general TODO across api.py is add error code to return tuple
-            return {'valid_parent_ids': self.par_db.api_get_all_id()}
+            return {'valid_parent_ids': self.meta_db.api_get_all_id()}
         # GET /parallel/obj_id/
         else:
-            return self.par_db.api_get_object(str(obj_id))
+            return self.meta_db.api_get_object(str(obj_id))
 
     def delete(self, obj_id=None):
         # DELETE /meta
