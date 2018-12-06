@@ -20,7 +20,6 @@ api = Api(app)
 # This can/should be corrected after we have finalized the hash & split functionality
 # as these directly play into the naming conventions
 parser = reqparse.RequestParser()
-parser.add_argument('task')  # Temporary, used in a few tests and should be removed
 parser.add_argument('removeAfter', type=bool, default=False)
 parser.add_argument('newObjID', default=None)
 parser.add_argument('download', type=bool, default=False)
@@ -119,7 +118,7 @@ class Parallel(Resource):
 
     def put(self):
         args = parser.parse_args()
-        return {'task': args['task']}  # for testing / example ATM
+        pass
 
 
 class Cloud(Resource):
