@@ -1,12 +1,26 @@
 # 3rd party
-from flask import request
-from flask_restful import Resource
+from flask import request, Flask
+from flask_restful import Resource, Api, reqparse
 # project
 from union_prototype import db_interface
 
+###########################################################################
+# Flask-Restful API
+# https://flask-restful.readthedocs.io
+###########################################################################
+app = Flask(__name__)
+# noinspection PyTypeChecker
+api = Api(app)
+
+parser = reqparse.RequestParser()
+parser.add_argument('task')
+
 
 class MetaData(Resource):
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.db_url = kwargs['db_url']
+        self.db_port = kwargs['db_port']
+
         self.meta_db = db_interface.DatabaseCtl()
 
     ###########################################################################
@@ -71,7 +85,10 @@ class MetaData(Resource):
 
 
 class Parallel(Resource):
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.db_url = kwargs['db_url']
+        self.db_port = kwargs['db_port']
+
         self.par_db = db_interface.DatabaseCtl()
 
     ###########################################################################
@@ -89,11 +106,15 @@ class Parallel(Resource):
             return self.par_db.api_get_object(str(obj_id))
 
     def put(self):
-        pass
+        args = parser.parse_args()
+        return {'task': args['task']}  # for testing / example ATM
 
 
 class Cloud(Resource):
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.db_url = kwargs['db_url']
+        self.db_port = kwargs['db_port']
+
         self.cld_db = db_interface.DatabaseCtl()
 
     ###########################################################################
@@ -138,21 +159,60 @@ class Cloud(Resource):
                                 'cloudLoc': cloc}}
 
 
-def execute_cloud_get(og_obj_id, tar_par_loc):
+def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,
+                      tar_par_loc, remove_after):
     # TODO: download file from CLOUD
     pass
 
 
-def execute_cloud_put(og_obj_id, tar_cloud_vendor, tar_cloud_loc):
+def execute_cloud_put(og_obj_id, og_par_loc,
+                      tar_obj_id, tar_cloud_vendor, tar_cloud_loc,
+                      remove_after):
     # TODO: upload file to CLOUD
     pass
 
 
-def execute_parallel_get(og_obj_id, tar_par_loc):
+def execute_parallel_get(og_obj_id, tar_par_loc, remove_after):
     # TODO: download file from PARALLEL
     pass
 
 
-def execute_parallel_put(og_obj_id, tar_par_loc):
+def execute_parallel_put(og_obj_id, og_cloud_vendor, og_cloud_loc,
+                         tar_obj_id, tar_par_loc, remove_after):
     # TODO: upload file to PARALLEL
     pass
+
+
+# noinspection PyTypeChecker
+def main(debug, db_url, db_port):
+    # Parallel (e.g. Lustre) resources
+    api.add_resource(Parallel, '/parallel',
+                     '/parallel/<string:obj_id>',
+                     '/parallel/<string:obj_id>/<string:file_sys>',
+                     resource_class_kwargs={
+                         'db_url': db_url,
+                         'db_port': db_port
+                     })
+
+    # Cloud (e.g. Google Cloud Storage, Amazon S3) resources
+    api.add_resource(Cloud, '/cloud',
+                     '/cloud/<string:obj_id>',
+                     '/cloud/<string:obj_id>/<string:cloud_vendor>',
+                     '/cloud/<string:obj_id>/<string:cloud_vendor>/<string:cloud_loc>',
+                     resource_class_kwargs={
+                         'db_url': db_url,
+                         'db_port': db_port
+                     }
+                     )
+
+    # MetaData (PUT/DELETE entries in DB only!) resource
+    api.add_resource(MetaData, '/meta',
+                     '/meta/<string:obj_id>',
+                     resource_class_kwargs={
+                         'db_url': db_url,
+                         'db_port': db_port
+                     }
+                     )
+
+    app.run(debug=debug)
+
