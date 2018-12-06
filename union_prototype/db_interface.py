@@ -19,7 +19,10 @@ from termcolor import cprint
 class DatabaseCtl(object):
     def __init__(self):
         # hardcoded paths (need to alter)
-        self.db_loc = os.path.dirname(os.path.realpath(__file__)) + "/.protodb"
+        self.db_name = '.protodb'
+        self.db_loc = "{0}/{1}".format(
+            os.path.dirname(os.path.realpath(__file__)), self.db_name
+        )
         self.table = "objectdata"
 
     def create_object_db(self):

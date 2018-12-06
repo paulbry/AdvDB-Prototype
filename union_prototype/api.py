@@ -22,6 +22,8 @@ parser = reqparse.RequestParser()
 parser.add_argument('removeAfter', type=bool, default=False)
 parser.add_argument('newObjID', default=None)
 parser.add_argument('download', type=bool, default=False)
+parser.add_argument('backup', type=bool, default=False)
+parser.add_argument('restore', type=bool, default=False)
 
 
 class MetaData(Resource):
@@ -30,6 +32,8 @@ class MetaData(Resource):
         self.db_port = kwargs['db_port']
 
         self.meta_db = db_interface.DatabaseCtl()
+
+        self.backup_bucket = "db_backup_advdb18"
 
     ###########################################################################
     # REST API
@@ -46,6 +50,20 @@ class MetaData(Resource):
         else:
             return self.meta_db.api_get_object(str(obj_id))
 
+    def put(self):
+        args = parser.parse_args()
+        if args.backup:
+            up_ci.gcloud_create_bucket(self.backup_bucket)
+            up_ci.gcloud_upload_blob(self.backup_bucket, self.meta_db.db_loc,
+                                     self.meta_db.db_name)
+            return {'success': 'database backup'}
+        elif args.restore:
+            up_ci.gcloud_download_blob(self.backup_bucket, self.meta_db.db_name,
+                                       self.meta_db.db_loc)
+            return {'success': 'database restore'}
+        else:
+            return {'error': 'backup or restore must be declared'}, 400
+
     def delete(self, obj_id=None):
         # DELETE /meta
         if obj_id is None:
@@ -55,7 +73,7 @@ class MetaData(Resource):
             if self.meta_db.safe_query_value('objectID', obj_id, 'parallelLoc'):
                 self.meta_db.safe_delete_entry('objectID', obj_id)
                 return {'True': 'Success: Removed {0}'.format(obj_id)}
-            return {'False': 'Error: Unable to identify {0}'.format(obj_id)}
+            return {'False': 'Error: Unable to identify {0}'.format(obj_id)}, 400
 
     def post(self):
         json_data = request.get_json(force=True)
@@ -154,17 +172,17 @@ class Cloud(Resource):
 
         # PUT /cloud
         if obj_id is None:
-            return {'unsupported': 'A valid objectID must be provided'}
+            return {'unsupported': 'A valid objectID must be provided'}, 400
         else:
             vend = cloud_vendor
             if cloud_vendor is None:
                 # PUT /cloud/obj_id
-                return {'error': 'no cloud vendor can be established'}
+                return {'error': 'no cloud vendor can be established'}, 400
 
             cloc = cloud_loc
             if cloud_loc is None:
                 # PUT /cloud/obj_id/cloud_vendor
-                return {'error': 'no cloud location can be established'}
+                return {'error': 'no cloud location can be established'}, 400
 
             new_obj_id = args.newObjID
             if args.newObjID is None:
@@ -177,17 +195,17 @@ class Cloud(Resource):
             file_hash = "TEST"   # TODO: implement has support
             parent = None  # TODO: implement concept of parent? (maybe if split)
 
-            b, id = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
-                                      tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
-                                      tar_cloud_loc=cloc, remove_after=args.removeAfter)
+            b, i = execute_cloud_put(og_obj_id=obj_id, og_par_loc=og_par_loc,
+                                     tar_obj_id=new_obj_id, tar_cloud_vendor=vend,
+                                     tar_cloud_loc=cloc, remove_after=args.removeAfter)
             if b:
                 if args.removeAfter:
                     self.cld_db.safe_delete_entry('objectID', obj_id)
                 self.cld_db.api_insert_event(new_obj_id, og_par_loc, cloc, file_hash,
                                              parent, vend)
-                return id  # Success
+                return i  # Success
             else:
-                return id  # Failure
+                return i, 400  # Failure
 
 
 def execute_cloud_get(og_obj_id, og_cloud_vendor, og_cloud_loc,

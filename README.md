@@ -86,6 +86,19 @@ TODO: outline currently support functionality with demonstration
     8. This will remove the object from the database but **NOT** the data, this will only affect the meta data database.
     9. `{"True": "Success: Removed example"}`
 
+* PUT
+
+    * Resource: `\meta`
+    
+    * Argument: `backup=<bool>` & `restore=<bool>`
+    
+    1. `$ curl 127.0.01:5000/meta -X PUT`
+    2. `{"error": "backup or restore must be declared"}`
+    3. The process requires use of the associate boolean arguments, for instance.
+    4. `$ curl 127.0.01:5000/meta -X PUT -d "backup=True"`
+    5. `{"success": "database backup"}`
+    6. You will then find the database under the (default) `db_backup_advdb18` bucket
+
 #### Parallel
 ?
 
